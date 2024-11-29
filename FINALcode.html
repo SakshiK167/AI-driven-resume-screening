@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATS Resume Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f7f9fc;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      transition: all 0.3s ease;
+    }
+
+    h1, h2 {
+      color: #333;
+    }
+
+    
+
+    /* Container */
+    .container {
+      display: flex;
+      max-width: 1000px;
+      width: 100%;
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: all 0.3s ease;
+      border: 2px solid #4a90e2;
+    }
+
+    .preview-section, .scanner-section {
+      padding: 30px;
+    }
+
+    .preview-section {
+      width: 40%;
+      background-color: #f0f4f8;
+      border-right: 2px solid #4a90e2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scanner-section {
+      width: 60%;
+      background-color: white;
+    }
+
+    /* PDF Preview Styles */
+    .pdf-preview {
+      width: 100%;
+      height: 300px;
+      background-color: #fff;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .pdf-preview iframe {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* File Input and Job Category Selection */
+    input[type="file"], select {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      border: 1px solid #4a90e2;
+      border-radius: 8px;
+      background-color: #f9fafb;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    
+    input[type="file"]:hover, select:hover {
+      background-color: #eef2f7;
+    }
+
+    /* Button Styles */
+    button {
+      display: block;
+      width: 100%;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #fff;
+      background-color:#4a90e2;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #4a90e2;
+      transform: translateY(-3px);
+    }
+
+    /* Circular Score Progress */
+    .circular-score {
+      width: 150px;
+      height: 150px;
+      position: relative;
+      margin: 20px auto;
+    }
+
+    .circular-score svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .circular-score circle {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+    }
+
+    .circular-score .background-circle {
+      stroke: #e6e6e6;
+    }
+
+    .circular-score .progress-circle {
+      stroke: #4a90e2;
+      stroke-dasharray: 440;
+      stroke-dashoffset: 440;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .circular-score .percentage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      font-weight: bold;
+      color: #4a90e2;
+    }
+
+    /* Result and Error Styles */
+    .result, .error {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .result {
+      background-color: #e0f7fa;
+      color: #4a90e2;
+    }
+
+    .error {
+      background-color: #ffebee;
+      color: #1477e9;
+    }
+
+    /* Loading Indicator */
+    .loading-spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #4a90e2;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      .preview-section, .scanner-section {
+        width: 100%;
+        border: none;
+      }
+
+      .preview-section {
+        border-bottom: 1px solid #e0e6ed;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- PDF Preview Section -->
+    <div class="preview-section">
+      <h2>PDF Preview</h2>
+      <div class="pdf-preview" id="pdfPreview">
+        <p>No file selected</p>
+      </div>
+    </div>
+
+    <!-- ATS Resume Scanner Section -->
+    <div class="scanner-section">
+      <h1>ATS Resume Scanner</h1>
+      <input type="file" id="resumeFile" accept=".pdf">
+      
+      <!-- Job Category Selection -->
+      <label for="jobCategory">Select Job Category:</label>
+<select id="jobCategory">
+  <option value="software">Software Development</option>
+  <option value="marketing">Marketing</option>
+  <option value="sales">Sales</option>
+  <option value="dataScience">Data Science</option>
+  <option value="finance">Finance</option>
+  <option value="humanResources">Human Resources</option>
+  <option value="projectManagement">Project Management</option>
+  <option value="design">Design</option>
+  <option value="healthcare">Healthcare</option>
+  <option value="customerService">Customer Service</option>
+</select>
+
+      <button onclick="calculateAtsScore()">Calculate ATS Score</button>
+
+      <!-- Circular Score Progress -->
+      <div class="circular-score">
+        <svg>
+          <circle class="background-circle" cx="75" cy="75" r="70"></circle>
+          <circle class="progress-circle" cx="75" cy="75" r="70"></circle>
+        </svg>
+        <div class="percentage" id="percentageDisplay">0%</div>
+      </div>
+
+      <div id="resultContainer"></div>
+      <div id="errorContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    let resume = null;
+
+    document.getElementById('resumeFile').addEventListener('change', function(event) {
+      resume = event.target.files[0];
+      showPdfPreview(resume);
+    });
+
+    function showPdfPreview(file) {
+      const pdfPreview = document.getElementById('pdfPreview');
+      pdfPreview.innerHTML = '';
+
+      if (file && file.type === 'application/pdf') {
+        const fileURL = URL.createObjectURL(file);
+        pdfPreview.innerHTML = <iframe src="${fileURL}"></iframe>;
+      } else {
+        pdfPreview.innerHTML = '<p>Selected file is not a PDF</p>';
+      }
+    }
+
+    function calculateAtsScore() {
+      const resultContainer = document.getElementById('resultContainer');
+      const errorContainer = document.getElementById('errorContainer');
+      const progressCircle = document.querySelector('.progress-circle');
+      const percentageDisplay = document.getElementById('percentageDisplay');
+      
+      // Reset error and result messages
+      resultContainer.innerHTML = '';
+      errorContainer.innerHTML = '';
+
+      if (!resume) {
+        errorContainer.innerHTML = '<div class="error"><strong>Please upload a resume</strong></div>';
+        return;
+      }
+
+      const jobCategory = document.getElementById('jobCategory').value;
+
+      // Show loading spinner during processing
+      resultContainer.innerHTML = '<div class="loading-spinner"></div>';
+
+      // Job-related keywords for various fields
+      const jobKeywords = {
+    software: /(?:JavaScript|HTML|CSS|React|Node\.js|REST API|Agile|Git|Python|Java|SQL|software engineering|developer|programmer|full-stack|backend|frontend|DevOps|SaaS|microservices|CI\/CD|cloud|AWS|Azure|scrum)/gi,
+    marketing: /(?:SEO|Content Marketing|Google Ads|Social Media|Brand Strategy|Email Campaigns|PPC|Analytics|marketing strategy|campaigns|lead generation|market research|branding|digital marketing|B2B marketing|B2C marketing|content strategy|conversion optimization|advertising)/gi,
+    sales: /(?:Lead Generation|Cold Calling|CRM|Salesforce|Negotiation|Closing Deals|Account Management|sales management|business development|sales strategy|client relationship|territory management|B2B sales|sales funnel|pipeline management|quota achievement|networking)/gi,
+    dataScience: /(?:Python|R|Data Analysis|Power BI|Machine Learning|TensorFlow|Big Data|SQL|Statistics|NLP|data analysis|predictive modeling|data visualization|data mining|AI|statistical analysis|data wrangling|Keras|scikit-learn|data engineering|forecasting)/gi,
+    finance: /(?:Financial Analysis|Excel|Accounting|Budgeting|Forecasting|Risk Management|Auditing|Investments|financial modeling|portfolio management|financial reporting|compliance|cost analysis|balance sheets|profit and loss|variance analysis|reconciliation|taxation|investment banking)/gi,
+    humanResources: /(?:recruiting|talent acquisition|interviewing|employee relations|performance management|HR policies|onboarding|employee engagement|compensation|benefits|HRIS|succession planning|diversity and inclusion|workforce planning|HR compliance|conflict resolution|payroll)/gi,
+    projectManagement: /(?:project management|agile|scrum|budgeting|risk management|scope|timeline|milestones|PMBOK|stakeholder|communication plan|resource allocation|waterfall|Gantt chart|scheduling|project charter|Jira|Kanban|cross-functional|deliverables|project lifecycle)/gi,
+    design: /(?:Photoshop|Illustrator|UI\/UX|Figma|Sketch|Wireframing|Prototyping|graphic design|visual hierarchy|user experience|user interface|Adobe XD|responsive design|brand identity|typography|color theory|layout design|digital media|Adobe Creative Suite|interaction design)/gi,
+    healthcare: /(?:patient care|clinical skills|medical records|EMR|ICD-10|HIPAA|treatment planning|diagnosis|medication administration|surgical assistance|healthcare management|medical terminology|triage|health assessment|patient education|public health|care coordination|healthcare policy|epidemiology)/gi,
+    customerService: /(?:customer support|CRM|customer satisfaction|problem resolution|active listening|service orientation|customer feedback|communication skills|client relations|call center|ticketing|client interaction|support tickets|account support|customer retention|soft skills|troubleshooting|helpdesk|response time|customer query handling)/gi,
+  };
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const resumeText = event.target.result;
+
+        let score = 0;
+        let errorCount = 0;
+
+        // Improved Grammar and Spelling Check
+        const grammarIssues = resumeText.match(/(?:\b(?:teh|adn|recieve|adress|definately|wich|occurance|seperate|its|you're|their|there|your|definitely|occur|separate|yourself|whose|could've|should've|would've)\b)/gi);
+        if (grammarIssues) {
+          errorCount += grammarIssues.length;
+        }
+
+        // Grammar and Spelling score (out of 100%)
+        const grammarScore = Math.max(0, (20 - errorCount) * 5);
+
+        // Job-related keywords matching for the selected category
+        const selectedKeywords = jobKeywords[jobCategory];
+        const keywordMatches = resumeText.match(selectedKeywords) || [];
+        const keywordScore = Math.min(100, keywordMatches.length * 5); // 100% scale
+
+        // Enhanced Formatting Check
+        const formattingSections = ["skills", "experience", "education", "projects", "certifications"];
+        const sectionMatches = formattingSections.filter(section => resumeText.toLowerCase().includes(section));
+        const sectionScore = (sectionMatches.length / formattingSections.length) * 100; // Normalize to a 100% scale
+
+        // File compatibility (already checked PDF format)
+        const compatibilityScore = resume ? 100 : 0;
+
+        // Final ATS score (average of scores)
+        score = (grammarScore + keywordScore + sectionScore + compatibilityScore) / 4;
+
+        // Update circular progress bar
+        const offset = 440 - (440 * score) / 100;
+        progressCircle.style.strokeDashoffset = offset;
+        percentageDisplay.textContent = ${score.toFixed(2)}%;
+
+        resultContainer.innerHTML = `
+          <div class="result">
+            <h2>ATS Score</h2>
+            <p>Your ATS score is: <strong>${score.toFixed(2)}%</strong></p>
+            <p><strong>Grammar Score:</strong> ${grammarScore.toFixed(2)}%</p>
+            <p><strong>Keyword Score (for ${jobCategory}):</strong> ${keywordScore.toFixed(2)}%</p>
+            <p><strong>Section Score:</strong> ${sectionScore.toFixed(2)}%</p>
+            <p><strong>File Compatibility:</strong> ${compatibilityScore}%</p>
+          </div>
+        `;
+      };
+      reader.readAsText(resume);
+    }
+  </script>
+
+</body>
+</html>
