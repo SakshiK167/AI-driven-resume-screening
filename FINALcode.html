@@ -23,8 +23,6 @@
       color: #333;
     }
 
-    
-
     /* Container */
     .container {
       display: flex;
@@ -230,18 +228,18 @@
       
       <!-- Job Category Selection -->
       <label for="jobCategory">Select Job Category:</label>
-<select id="jobCategory">
-  <option value="software">Software Development</option>
-  <option value="marketing">Marketing</option>
-  <option value="sales">Sales</option>
-  <option value="dataScience">Data Science</option>
-  <option value="finance">Finance</option>
-  <option value="humanResources">Human Resources</option>
-  <option value="projectManagement">Project Management</option>
-  <option value="design">Design</option>
-  <option value="healthcare">Healthcare</option>
-  <option value="customerService">Customer Service</option>
-</select>
+      <select id="jobCategory">
+        <option value="software">Software Development</option>
+        <option value="marketing">Marketing</option>
+        <option value="sales">Sales</option>
+        <option value="dataScience">Data Science</option>
+        <option value="finance">Finance</option>
+        <option value="humanResources">Human Resources</option>
+        <option value="projectManagement">Project Management</option>
+        <option value="design">Design</option>
+        <option value="healthcare">Healthcare</option>
+        <option value="customerService">Customer Service</option>
+      </select>
 
       <button onclick="calculateAtsScore()">Calculate ATS Score</button>
 
@@ -259,6 +257,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <script>
     let resume = null;
 
@@ -269,99 +268,100 @@
 
     function showPdfPreview(file) {
       const pdfPreview = document.getElementById('pdfPreview');
-      pdfPreview.innerHTML = '';
+      const reader = new FileReader();
 
-      if (file && file.type === 'application/pdf') {
-        const fileURL = URL.createObjectURL(file);
-        pdfPreview.innerHTML = <iframe src="${fileURL}"></iframe>;
-      } else {
-        pdfPreview.innerHTML = '<p>Selected file is not a PDF</p>';
-      }
+      reader.onload = function(event) {
+        const typedarray = new Uint8Array(event.target.result);
+        
+        pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+          pdf.getPage(1).then(function(page) {
+            const scale = 0.5;
+            const viewport = page.getViewport({ scale: scale });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            page.render({ canvasContext: context, viewport: viewport }).promise.then(function() {
+              pdfPreview.innerHTML = '';
+              pdfPreview.appendChild(canvas);
+            });
+          });
+        }).catch(function(error) {
+          pdfPreview.innerHTML = '<p>Error loading PDF preview.</p>';
+          console.error('Error loading PDF:', error);
+        });
+      };
+
+      reader.readAsArrayBuffer(file);
     }
 
     function calculateAtsScore() {
       const resultContainer = document.getElementById('resultContainer');
       const errorContainer = document.getElementById('errorContainer');
-      const progressCircle = document.querySelector('.progress-circle');
-      const percentageDisplay = document.getElementById('percentageDisplay');
-      
-      // Reset error and result messages
-      resultContainer.innerHTML = '';
-      errorContainer.innerHTML = '';
+      const jobCategory = document.getElementById('jobCategory').value;
 
       if (!resume) {
-        errorContainer.innerHTML = '<div class="error"><strong>Please upload a resume</strong></div>';
+        errorContainer.innerHTML = '<div class="error"><strong>Please upload a PDF file</strong></div>';
         return;
       }
 
-      const jobCategory = document.getElementById('jobCategory').value;
-
-      // Show loading spinner during processing
       resultContainer.innerHTML = '<div class="loading-spinner"></div>';
-
-      // Job-related keywords for various fields
       const jobKeywords = {
-    software: /(?:JavaScript|HTML|CSS|React|Node\.js|REST API|Agile|Git|Python|Java|SQL|software engineering|developer|programmer|full-stack|backend|frontend|DevOps|SaaS|microservices|CI\/CD|cloud|AWS|Azure|scrum)/gi,
-    marketing: /(?:SEO|Content Marketing|Google Ads|Social Media|Brand Strategy|Email Campaigns|PPC|Analytics|marketing strategy|campaigns|lead generation|market research|branding|digital marketing|B2B marketing|B2C marketing|content strategy|conversion optimization|advertising)/gi,
-    sales: /(?:Lead Generation|Cold Calling|CRM|Salesforce|Negotiation|Closing Deals|Account Management|sales management|business development|sales strategy|client relationship|territory management|B2B sales|sales funnel|pipeline management|quota achievement|networking)/gi,
-    dataScience: /(?:Python|R|Data Analysis|Power BI|Machine Learning|TensorFlow|Big Data|SQL|Statistics|NLP|data analysis|predictive modeling|data visualization|data mining|AI|statistical analysis|data wrangling|Keras|scikit-learn|data engineering|forecasting)/gi,
-    finance: /(?:Financial Analysis|Excel|Accounting|Budgeting|Forecasting|Risk Management|Auditing|Investments|financial modeling|portfolio management|financial reporting|compliance|cost analysis|balance sheets|profit and loss|variance analysis|reconciliation|taxation|investment banking)/gi,
-    humanResources: /(?:recruiting|talent acquisition|interviewing|employee relations|performance management|HR policies|onboarding|employee engagement|compensation|benefits|HRIS|succession planning|diversity and inclusion|workforce planning|HR compliance|conflict resolution|payroll)/gi,
-    projectManagement: /(?:project management|agile|scrum|budgeting|risk management|scope|timeline|milestones|PMBOK|stakeholder|communication plan|resource allocation|waterfall|Gantt chart|scheduling|project charter|Jira|Kanban|cross-functional|deliverables|project lifecycle)/gi,
-    design: /(?:Photoshop|Illustrator|UI\/UX|Figma|Sketch|Wireframing|Prototyping|graphic design|visual hierarchy|user experience|user interface|Adobe XD|responsive design|brand identity|typography|color theory|layout design|digital media|Adobe Creative Suite|interaction design)/gi,
-    healthcare: /(?:patient care|clinical skills|medical records|EMR|ICD-10|HIPAA|treatment planning|diagnosis|medication administration|surgical assistance|healthcare management|medical terminology|triage|health assessment|patient education|public health|care coordination|healthcare policy|epidemiology)/gi,
-    customerService: /(?:customer support|CRM|customer satisfaction|problem resolution|active listening|service orientation|customer feedback|communication skills|client relations|call center|ticketing|client interaction|support tickets|account support|customer retention|soft skills|troubleshooting|helpdesk|response time|customer query handling)/gi,
-  };
+        software: /(?:JavaScript|HTML|CSS|React|Node\.js|Python)/gi,
+        marketing: /(?:SEO|Google Ads|Social Media|Brand Strategy|Analytics)/gi,
+        sales: /(?:Sales|B2B|CRM|Customer Relations|Lead Generation)/gi,
+        dataScience: /(?:Python|R|Data Analysis|Machine Learning|Big Data|AI)/gi,
+        finance: /(?:Finance|Investment|Accounting|Risk Management|Financial Analysis)/gi,
+        humanResources: /(?:HR|Recruitment|Employee Relations|Talent Management|Onboarding)/gi,
+        projectManagement: /(?:Project Management|Agile|Scrum|PMP|Leadership)/gi,
+        design: /(?:UI\/UX|Photoshop|Illustrator|Figma|Wireframes|Prototyping)/gi,
+        healthcare: /(?:Healthcare|Nursing|Patient Care|Medical Records|Physician)/gi,
+        customerService: /(?:Customer Service|Support|Client Relations|Call Center|Issue Resolution)/gi
+      };
 
       const reader = new FileReader();
       reader.onload = function(event) {
-        const resumeText = event.target.result;
+        const typedarray = new Uint8Array(event.target.result);
 
-        let score = 0;
-        let errorCount = 0;
+        pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+          let resumeText = '';
+          const maxPages = 3; // Limit to first 3 pages for performance
+          let pagePromises = [];
+          
+          for (let i = 1; i <= Math.min(pdf.numPages, maxPages); i++) {
+            pagePromises.push(pdf.getPage(i).then(function(page) {
+              return page.getTextContent().then(function(textContent) {
+                return textContent.items.map(item => item.str).join(' ');
+              });
+            }));
+          }
 
-        // Improved Grammar and Spelling Check
-        const grammarIssues = resumeText.match(/(?:\b(?:teh|adn|recieve|adress|definately|wich|occurance|seperate|its|you're|their|there|your|definitely|occur|separate|yourself|whose|could've|should've|would've)\b)/gi);
-        if (grammarIssues) {
-          errorCount += grammarIssues.length;
-        }
+          Promise.all(pagePromises).then(pages => {
+            resumeText = pages.join('\n');
+            const resumeTextLower = resumeText.toLowerCase();
+            const selectedKeywords = jobKeywords[jobCategory];
+            const keywordMatches = resumeTextLower.match(selectedKeywords) || [];
+            const keywordScore = Math.min(100, keywordMatches.length * 8);  // Adjust multiplier for category
 
-        // Grammar and Spelling score (out of 100%)
-        const grammarScore = Math.max(0, (20 - errorCount) * 5);
-
-        // Job-related keywords matching for the selected category
-        const selectedKeywords = jobKeywords[jobCategory];
-        const keywordMatches = resumeText.match(selectedKeywords) || [];
-        const keywordScore = Math.min(100, keywordMatches.length * 5); // 100% scale
-
-        // Enhanced Formatting Check
-        const formattingSections = ["skills", "experience", "education", "projects", "certifications"];
-        const sectionMatches = formattingSections.filter(section => resumeText.toLowerCase().includes(section));
-        const sectionScore = (sectionMatches.length / formattingSections.length) * 100; // Normalize to a 100% scale
-
-        // File compatibility (already checked PDF format)
-        const compatibilityScore = resume ? 100 : 0;
-
-        // Final ATS score (average of scores)
-        score = (grammarScore + keywordScore + sectionScore + compatibilityScore) / 4;
-
-        // Update circular progress bar
-        const offset = 440 - (440 * score) / 100;
-        progressCircle.style.strokeDashoffset = offset;
-        percentageDisplay.textContent = ${score.toFixed(2)}%;
-
-        resultContainer.innerHTML = `
-          <div class="result">
-            <h2>ATS Score</h2>
-            <p>Your ATS score is: <strong>${score.toFixed(2)}%</strong></p>
-            <p><strong>Grammar Score:</strong> ${grammarScore.toFixed(2)}%</p>
-            <p><strong>Keyword Score (for ${jobCategory}):</strong> ${keywordScore.toFixed(2)}%</p>
-            <p><strong>Section Score:</strong> ${sectionScore.toFixed(2)}%</p>
-            <p><strong>File Compatibility:</strong> ${compatibilityScore}%</p>
-          </div>
-        `;
+            updateCircularProgress(keywordScore);
+            resultContainer.innerHTML = <div class="result"><strong>ATS Score: ${keywordScore}%</strong></div>;
+          });
+        }).catch(error => {
+          console.error('Error parsing PDF:', error);
+          errorContainer.innerHTML = '<div class="error"><strong>Error parsing resume file</strong></div>';
+        });
       };
-      reader.readAsText(resume);
+
+      reader.readAsArrayBuffer(resume); // Read as ArrayBuffer for PDF
+    }
+
+    function updateCircularProgress(score) {
+      const progressCircle = document.querySelector('.progress-circle');
+      const percentageDisplay = document.getElementById('percentageDisplay');
+      const offset = 440 - (440 * score) / 100;
+      progressCircle.style.strokeDashoffset = offset;
+      percentageDisplay.textContent = ${score.toFixed(2)}%;
     }
   </script>
 
